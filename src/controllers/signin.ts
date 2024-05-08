@@ -39,9 +39,6 @@ export async function signin(req: Request, res: Response) {
             "referral_code": influencer.referral_code
         });
 
-
-    
-            
         
     } catch(err){
         console.log(err);

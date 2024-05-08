@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.signup = void 0;
 const db_1 = __importDefault(require("../db"));
+const ethers_1 = require("ethers");
 function signup(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -25,26 +26,19 @@ function signup(req, res) {
                 });
                 return;
             }
-            const options = {
-                method: 'POST',
-                headers: {
-                    "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-                }
-            };
-            const url = process.env.LUMX_API_URL + "/wallets";
-            const responseLumx = yield fetch(url, options);
-            const responseJson = yield responseLumx.json();
-            const walletId = responseJson.id;
-            const walletAddress = responseJson.address;
+            const newWallet = ethers_1.ethers.Wallet.createRandom();
+            const walletId = newWallet.address;
+            const walletAddress = newWallet.address;
+            const walletPrivateKey = newWallet.privateKey;
             //generate a random code with 8 characters
             const referralCode = Math.random().toString(36).substring(2, 10);
             yield db_1.default.query(`
       INSERT INTO influencers(
-        name, password, email, wallet_id, wallet_address, referral_code
+        name, password, email, wallet_id, wallet_address, referral_code, private_key
       ) VALUES (
-        $1, $2, $3, $4, $5, $6
+        $1, $2, $3, $4, $5, $6, $7
       );
-    `, [name, password, email, walletId, walletAddress, referralCode]);
+    `, [name, password, email, walletId, walletAddress, referralCode, walletPrivateKey]);
             res.status(200).send({
                 "wallet_id": walletId,
                 "wallet_address": walletAddress,

@@ -1,4 +1,7 @@
+import { ethers } from "ethers";
 import { Request, Response } from "express";
+import { connectEVM } from "../utils";
+import { ERC20ABI, FEST_TOKEN_ADDRESS } from "../constants";
 
 
 export async function getBalanceByWalletId(req: Request, res: Response) {
@@ -12,36 +15,19 @@ export async function getBalanceByWalletId(req: Request, res: Response) {
             })
         }
 
-        const options = {
-            method: 'GET',
-            headers: {
-                "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-            },
-        }
-
-        const url = process.env.LUMX_API_URL + "/wallets/" + walletId;
-        const responseLumx = await fetch(url, options);
-        const  responseJson = await responseLumx.json();
-
-    
-        if(!("tokens" in responseJson)) {
+        if(!ethers.utils.isAddress(walletId)){
             return res.status(400).send({
-                "error": "WalletId not found"
+                "error": "WalletId is not an address"
             })
         }
-        let balance = 0;
 
+        const {web3Provider} = await connectEVM() as any;
 
-        for(let i = 0; i < responseJson.tokens.length; i++) {
-            if(String(responseJson.tokens[i].contractAddress).toLowerCase() === String(process.env.TOKEN_ADDRESS).toLowerCase()) {
-                balance = responseJson.tokens[i].quantity/(Math.pow(10, 18));
-                break;
-            }
-            return res.status(400).send({
-                "error": "Token not found"
-            })
-        }
-        
+        const tokenContract = new ethers.Contract(FEST_TOKEN_ADDRESS, ERC20ABI, web3Provider);
+
+        const balanceBigNumber = await tokenContract.balanceOf(walletId);
+        const balance = ethers.utils.formatEther(balanceBigNumber[0]);
+
 
         res.status(200).send({
             "balance": balance
@@ -68,28 +54,19 @@ export async function withdraw(req: Request, res: Response) {
             })
         }
 
-        const options = {
-            method: 'POST',
-            headers: {
-                "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "contractId": process.env.TOKEN_ID,
-                "from": wallet_id,
-                "to": process.env.TREASURY_ADDRESS,
-                "quantity": amount,
-            })
-        }
 
-        const url = process.env.LUMX_API_URL + "/transactions/transfers";
+        const {web3Signer} = await connectEVM() as any;
 
-        const responseLumx = await fetch(url, options);
-        const responseJson = await responseLumx.json();
+        const amountBigNumber = ethers.utils.parseEther(String(amount));
+
+        const tokenContract = new ethers.Contract(FEST_TOKEN_ADDRESS, ERC20ABI, web3Signer);
+
+        const tx = await tokenContract.functions.transferFrom(wallet_id, process.env.TREASURY_ADDRESS, amountBigNumber);
+        await tx.wait();
         
 
         res.status(200).send({
-            "tx_id": responseJson
+            "tx_id": tx.hash
         });
 
     } catch(err) {

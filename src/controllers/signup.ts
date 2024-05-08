@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import connection from "../db";
+import { ethers } from "ethers";
 
 
 
@@ -14,31 +15,24 @@ export async function signup(req: Request, res: Response) {
       return;
     }
 
-    const options = {
-        method: 'POST',
-        headers: {
-            "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-        }
-    }
+    const newWallet = ethers.Wallet.createRandom();
 
-    const url = process.env.LUMX_API_URL + "/wallets";
+    const walletId = newWallet.address;
+    const walletAddress = newWallet.address;
+    const walletPrivateKey = newWallet.privateKey;
 
-    const responseLumx = await fetch(url, options);
-    const responseJson = await responseLumx.json();
 
-    const walletId = responseJson.id;
-    const walletAddress = responseJson.address;
 
     //generate a random code with 8 characters
     const referralCode = Math.random().toString(36).substring(2, 10);
 
     await connection.query(`
       INSERT INTO influencers(
-        name, password, email, wallet_id, wallet_address, referral_code
+        name, password, email, wallet_id, wallet_address, referral_code, private_key
       ) VALUES (
-        $1, $2, $3, $4, $5, $6
+        $1, $2, $3, $4, $5, $6, $7
       );
-    `,[name, password, email, walletId, walletAddress, referralCode]);
+    `,[name, password, email, walletId, walletAddress, referralCode, walletPrivateKey]);
 
 
     res.status(200).send({

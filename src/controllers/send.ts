@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import connection from "../db";
+import { connectEVM } from "../utils";
+import { ethers } from "ethers";
+import { ERC20ABI, FEST_TOKEN_ADDRESS } from "../constants";
 
 
 export async function sendTokens(req: Request, res: Response) {
@@ -26,27 +29,16 @@ export async function sendTokens(req: Request, res: Response) {
 
         const amount = amounts.rows[0].reward_per_sell;
 
-        const options = {
-            method: 'POST',
-            headers: {
-                "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "contractId": process.env.TOKEN_ID,
-                "walletId": wallet_id,
-                "quantity": amount,
-            })
-        }
 
-        const url = process.env.LUMX_API_URL + "/transactions/mints";
+        const {web3Signer} = await connectEVM() as any;
 
-        const responseLumx = await fetch(url, options);
-        const responseJson = await responseLumx.json();
-        console.log(responseJson);
+        const tokenContract = new ethers.Contract(FEST_TOKEN_ADDRESS, ERC20ABI, web3Signer);
+
+        const tx = await tokenContract.functions.mint(wallet_id, ethers.utils.parseEther(String(amount)));
+        await tx.wait();
 
         res.status(200).send({
-            "tx_id": responseJson
+            "tx_id": tx.hash
         });
 
 

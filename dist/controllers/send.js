@@ -14,6 +14,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendTokens = void 0;
 const db_1 = __importDefault(require("../db"));
+const utils_1 = require("../utils");
+const ethers_1 = require("ethers");
+const constants_1 = require("../constants");
 function sendTokens(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -32,24 +35,12 @@ function sendTokens(req, res) {
             SELECT reward_per_sell FROM events WHERE id = $1;
         `, [event_id]);
             const amount = amounts.rows[0].reward_per_sell;
-            const options = {
-                method: 'POST',
-                headers: {
-                    "Authorization": `Bearer ${process.env.LUMX_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    "contractId": process.env.TOKEN_ID,
-                    "walletId": wallet_id,
-                    "quantity": amount,
-                })
-            };
-            const url = process.env.LUMX_API_URL + "/transactions/mints";
-            const responseLumx = yield fetch(url, options);
-            const responseJson = yield responseLumx.json();
-            console.log(responseJson);
+            const { web3Signer } = yield (0, utils_1.connectEVM)();
+            const tokenContract = new ethers_1.ethers.Contract(constants_1.FEST_TOKEN_ADDRESS, constants_1.ERC20ABI, web3Signer);
+            const tx = yield tokenContract.functions.mint(wallet_id, ethers_1.ethers.utils.parseEther(String(amount)));
+            yield tx.wait();
             res.status(200).send({
-                "tx_id": responseJson
+                "tx_id": tx.hash
             });
         }
         catch (err) {
