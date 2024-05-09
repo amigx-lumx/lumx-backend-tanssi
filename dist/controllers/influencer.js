@@ -30,7 +30,8 @@ function getBalanceByWalletId(req, res) {
             const { web3Provider } = yield (0, utils_1.connectEVM)();
             const tokenContract = new ethers_1.ethers.Contract(constants_1.FEST_TOKEN_ADDRESS, constants_1.ERC20ABI, web3Provider);
             const balanceBigNumber = yield tokenContract.balanceOf(walletId);
-            const balance = ethers_1.ethers.utils.formatEther(balanceBigNumber[0]);
+            console.log("balance", balanceBigNumber);
+            const balance = ethers_1.ethers.utils.formatEther(balanceBigNumber);
             res.status(200).send({
                 "balance": balance
             });
