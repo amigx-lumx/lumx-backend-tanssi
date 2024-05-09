@@ -8,7 +8,7 @@ import cors from 'cors';
 import { signup } from './controllers/signup';
 import { sendTokens } from "./controllers/send";
 import { createEvent, getEvents } from "./controllers/event";
-import { getBalanceByWalletId } from "./controllers/influencer";
+import { getBalanceByWalletId, withdraw } from "./controllers/influencer";
 import { signin } from "./controllers/signin";
 
 
@@ -31,6 +31,8 @@ app.get('/', (req, res) => {
 app.post('/event', async (req, res) => await createEvent(req, res));
 app.get('/events', async (req, res) => await getEvents(req, res));
 app.get('/influencers/:walletId/balance', async (req, res) => await getBalanceByWalletId(req, res));
+
+app.post('/withdraw', async (req, res) => await withdraw(req, res));
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
