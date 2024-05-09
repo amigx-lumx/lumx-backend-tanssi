@@ -26,7 +26,9 @@ export async function getBalanceByWalletId(req: Request, res: Response) {
         const tokenContract = new ethers.Contract(FEST_TOKEN_ADDRESS, ERC20ABI, web3Provider);
 
         const balanceBigNumber = await tokenContract.balanceOf(walletId);
-        const balance = ethers.utils.formatEther(balanceBigNumber[0]);
+
+        console.log("balance", balanceBigNumber)
+        const balance = ethers.utils.formatEther(balanceBigNumber);
 
 
         res.status(200).send({
