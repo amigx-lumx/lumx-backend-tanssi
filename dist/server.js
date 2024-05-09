@@ -35,6 +35,7 @@ app.get('/', (req, res) => {
 app.post('/event', (req, res) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, event_1.createEvent)(req, res); }));
 app.get('/events', (req, res) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, event_1.getEvents)(req, res); }));
 app.get('/influencers/:walletId/balance', (req, res) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, influencer_1.getBalanceByWalletId)(req, res); }));
+app.post('/withdraw', (req, res) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, influencer_1.withdraw)(req, res); }));
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
